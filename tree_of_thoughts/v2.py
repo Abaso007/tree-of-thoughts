@@ -37,7 +37,6 @@ class TreeofThoughtsV2:
 
 
     def get_values(self, task, x, ys, n_evaluate_sample, cache_value=True):
-        values = []
         local_value_cache = {}
         for y in ys:  # each partial output
             if y in local_value_cache:  # avoid duplicate candidates
@@ -45,8 +44,7 @@ class TreeofThoughtsV2:
         else:    
             value = get_value(task, x, y, n_evaluate_sample, cache_value=cache_value)
             local_value_cache[y] = value
-        values.append(value)
-        return values
+        return [value]
 
 
     def get_votes(self, task, x, ys, n_evaluate_sample):

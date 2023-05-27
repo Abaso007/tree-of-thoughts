@@ -53,8 +53,7 @@ class LangchainCustomLanguageModel(AbstractLanguageModel):
         state_text = ' '.join(state)
         prompt = f"Given the current state of reasoning: '{state_text}', generate {k} coherent thoughts to continue the reasoning process:"
         response = self.agent.arun(input=prompt)
-        thoughts = response.strip().split('\n')
-        return thoughts
+        return response.strip().split('\n')
 
     def evaluate_states(self, states):
         state_values = {}

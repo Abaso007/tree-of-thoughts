@@ -24,8 +24,7 @@ class DatasetGenerator:
         prompt=f"Generate {n_questions} unique questions related to the topic '{topic}':"
         response = self.openai_language_model.openai_api_call_handler(prompt, 50 * n_questions, 0.5, 1)
         questions_text = self.openai_language_model.openai_choice2text_handler(response.choices[0])
-        questions = questions_text.split('\n')[:n_questions]
-        return questions
+        return questions_text.split('\n')[:n_questions]
     
 
     def generate_dataset(self, topic, n_questions: 1000):
