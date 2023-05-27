@@ -10,17 +10,16 @@ api_model= "gpt-3.5-turbo"
 #model_name="gpt2
 #huggingface_model = HuggingLanguageModel(model_name)
 
-if not use_v2:
-    if not use_guidance:
-        #v1
-        model = OpenAILanguageModel(api_key=api_key, api_base=api_base, api_model=api_model)
-    else:
-        #v1 with guidance
-        model = GuidanceOpenAILanguageModel(api_key=api_key, api_base=api_base, api_model=api_model)
-else:
+if use_v2:
     #v2 parallel execution, caching, adaptive temperature
     model = OptimizedOpenAILanguageModel(api_key=api_key, api_base=api_base, api_model=api_model)
 
+elif not use_guidance:
+    #v1
+    model = OpenAILanguageModel(api_key=api_key, api_base=api_base, api_model=api_model)
+else:
+    #v1 with guidance
+    model = GuidanceOpenAILanguageModel(api_key=api_key, api_base=api_base, api_model=api_model)
 #choose search algorithm('BFS' or 'DFS')
 search_algorithm = "BFS"
 
@@ -49,9 +48,9 @@ convergence_count = 5
 
 #call the solve emthod with the input problem and other params
 solution = tree_of_thoughts.solve(input_problem, k, T, b, vth, timeout, confidence, max_iterations, convergence_threshold, convergence_count)
-    
-                  
-    
+
+
+
 #use the solution in your production environment
 print(f"solution: {solution}")
 

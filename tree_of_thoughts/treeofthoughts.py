@@ -165,26 +165,23 @@ class HFPipelineModel(AbstractLanguageModel):
 class OpenAILanguageModel(AbstractLanguageModel):
     def __init__(self, api_key, strategy="cot", evaluation_strategy="value", api_base="", api_model="", enable_ReAct_prompting=True):
         env_tree = os.getenv("OPENAI_API_KEY")
-        if api_key == "" or api_key == None:
+        if api_key == "" or api_key is None:
             api_key = os.environ.get("OPENAI_API_KEY", "")
         if api_key != "":
             openai.api_key = api_key
         else:
             raise Exception("Please provide OpenAI API key")
 
-        if api_base == ""or api_base == None:
+        if api_base == "" or api_base is None:
             api_base = os.environ.get("OPENAI_API_BASE", "")  # if not set, use the default base path of "https://api.openai.com/v1"
         if api_base != "":
             # e.g. https://api.openai.com/v1/ or your custom url
             openai.api_base = api_base
             print(f'Using custom api_base {api_base}')
-            
-        if api_model == "" or api_model == None:
+
+        if api_model == "" or api_model is None:
             api_model = os.environ.get("OPENAI_API_MODEL", "")
-        if api_model != "":
-            self.api_model = api_model
-        else:
-            self.api_model = "text-davinci-003"
+        self.api_model = api_model if api_model != "" else "text-davinci-003"
         print(f'Using api_model {self.api_model}')
 
         self.use_chat_api = 'gpt' in self.api_model
@@ -193,7 +190,7 @@ class OpenAILanguageModel(AbstractLanguageModel):
         self.ReAct_prompt = ''
         if enable_ReAct_prompting:
             self.ReAct_prompt = "Write down your observations in format 'Observation:xxxx', then write down your thoughts in format 'Thoughts:xxxx'."
-        
+
         self.strategy = strategy
         self.evaluation_strategy = evaluation_strategy
 
@@ -245,22 +242,18 @@ class OpenAILanguageModel(AbstractLanguageModel):
                 text = self.openai_choice2text_handler(response.choices[0])
                 thoughts += [text]
                 print(f'thoughts: {thoughts}')
-            return thoughts
-            
         else:
             response = self.openai_api_call_handler(prompt, 50, 0.5, k)
             thoughts = [self.openai_choice2text_handler(choice) for choice in response.choices]
-            return thoughts
+
+        return thoughts
 
 
 
     def generate_thoughts(self, state, k, inital_prompt):
-        if (type(state) == str):
-            state_text = state
-        else:
-            state_text = '\n'.join(state)
+        state_text = state if (type(state) == str) else '\n'.join(state)
         print("We receive a state of type", type(state), "For state: ", state, "\n\n")
-        
+
         # prompt = f"Given the current state of reasoning: \n\n\n'{state_text}'\n\n\nGenerate the next best coherent thought to achieve the reasoning process and get the solution: "
         # prompt = f"Based on the current state of reasoning: \n\n\n'{state_text} Provide the next coherent thought that will help progress the reasoning process and reach an soluton "
         # prompt = f"These are the thoughts you've had: \n\n\n{state_text}, provide the next coherent thought that will help advance the reasoning process and reach an solution for this problem {inital_prompt}. Think sharply, think out of the box, predict failure. Do not leave any open questions. Unleash your mind."
@@ -275,11 +268,7 @@ class OpenAILanguageModel(AbstractLanguageModel):
 
         
     def generate_solution(self, initial_prompt, state):
-        if (type(state) == str):
-            state_text = state
-        else:
-            state_text = '\n'.join(state)
-        
+        state_text = state if (type(state) == str) else '\n'.join(state)
         prompt = f"Considering the reasoning provided:\n\n'{state_text}'\n\nDevise the best possible solution for the task: {initial_prompt}"
         answer = self.generate_text(prompt, 1)
         # print(thoughts)
@@ -418,8 +407,7 @@ class GuidanceLanguageModel(AbstractLanguageModel):
         
     def model_response_handler(self, program, **kargs):
         print("Calling guidance model(Modify Me to handle specific LLM response excpetions!)")
-        reponse = program(**kargs)
-        return reponse
+        return program(**kargs)
 
     def generate_thoughts(self, state, k):
         #implement the thought generation logic using self.model
@@ -464,26 +452,23 @@ class GuidanceLanguageModel(AbstractLanguageModel):
 
 class GuidanceOpenAILanguageModel(GuidanceLanguageModel):
     def __init__(self, api_key, strategy="cot", evaluation_strategy="value", api_base="", api_model="", enable_ReAct_prompting=False):
-        if api_key == "" or api_key == None:
+        if api_key == "" or api_key is None:
             api_key = os.environ.get("OPENAI_API_KEY", "")
         if api_key != "":
             openai.api_key = api_key
         else:
             raise Exception("Please provide OpenAI API key")
 
-        if api_base == ""or api_base == None:
+        if api_base == "" or api_base is None:
             api_base = os.environ.get("OPENAI_API_BASE", "")  # if not set, use the default base path of "https://api.openai.com/v1"
         if api_base != "":
             # e.g. https://api.openai.com/v1/ or your custom url
             openai.api_base = api_base
             print(f'Using custom api_base {api_base}')
-            
-        if api_model == "" or api_model == None:
+
+        if api_model == "" or api_model is None:
             api_model = os.environ.get("OPENAI_API_MODEL", "")
-        if api_model != "":
-            self.api_model = api_model
-        else:
-            self.api_model = "text-davinci-003"
+        self.api_model = api_model if api_model != "" else "text-davinci-003"
         print(f'Using api_model {self.api_model}')
 
         super().__init__(guidance.llms.OpenAI(self.api_model), strategy, evaluation_strategy, enable_ReAct_prompting)
@@ -495,8 +480,7 @@ class GuidanceOpenAILanguageModel(GuidanceLanguageModel):
             try:
                 program.llm.max_retries = 60
                 guidance.llms.OpenAI.cache.clear()
-                response = program(**kargs)
-                return response
+                return program(**kargs)
             except openai.error.RateLimitError as e:
                 sleep_duratoin = os.environ.get("OPENAI_RATE_TIMEOUT", 30)
                 print(f'{str(e)}, sleep for {sleep_duratoin}s, set it by env OPENAI_RATE_TIMEOUT')
@@ -561,14 +545,12 @@ class TreeofThoughts:
         try:
             if self.search_algorithm == 'BFS':
                 while timeout is None or time.time() - start_time < timeout:
-                    result = self.tot_bfs(x, k, T, b)
-                    if result:
+                    if result := self.tot_bfs(x, k, T, b):
                         self.save_tree_to_json(file_name)
                         return result
             elif self.search_algorithm == 'DFS':
                 while timeout is None or time.time() - start_time < timeout:
-                    result = self.tot_dfs(x, k, T, vth)
-                    if result:
+                    if result := self.tot_dfs(x, k, T, vth):
                         self.save_tree_to_json(file_name)
                         return result
             else:
@@ -601,9 +583,7 @@ class TreeofThoughts:
 
 
 
-        best_state = max(St, key=lambda s: Vt[s])
-
-        return best_state
+        return max(St, key=lambda s: Vt[s])
 
 
     def tot_dfs(self, x, k, T, vth, pruning_threshold=0.5, confidence_threshold=None, max_iterations=None, convergence_threshold=None, convergence_count=None):
@@ -619,7 +599,7 @@ class TreeofThoughts:
             if t > T:
                 thought = self.model.generate_thoughts(s, 1, x)
                 print(f'thoughts inside dfs {thought}')
-                
+
                 value = self.model.evaluate_states({s}, x)[s]
                 print(f'values inside dfs {value}')
 
@@ -638,20 +618,19 @@ class TreeofThoughts:
                 prev_best_value = value
                 iteration_count += 1
 
-                if (max_iterations is not None and iteration_count >= max_iterations) or (convergence_count is not None and consecutive_convergence_count >= convergence_count):
-                    return True
-
-                return False
-
+                return (
+                    max_iterations is not None
+                    and iteration_count >= max_iterations
+                ) or (
+                    convergence_count is not None
+                    and consecutive_convergence_count >= convergence_count
+                )
             for s_prime in sorted(self.model.generate_thoughts(s, k, x)):
                 state_value = self.model.evaluate_states({s_prime}, x)[s_prime]
                 logger.info(f"State: {s_prime}, Value: {state_value}")
 
                 if state_value > vth and (pruning_threshold is None or state_value >= pruning_threshold):
-                    if (type(s) == str):
-                        child = (s, s_prime)
-                    else:
-                        child = (*s, s_prime)
+                    child = (s, s_prime) if (type(s) == str) else (*s, s_prime)
                     # self.tree['nodes'][child] = s
                     # self.tree["metrics"]["thoughts"][child] = s_prime
                     # self.tree["metrics"]["evaluations"][child] = state_value
@@ -661,8 +640,9 @@ class TreeofThoughts:
 
             self.save_tree_to_json(file_name)
             return False
-        
+
             
+
         dfs(x, 4)
         print(f'output  {output}')
         best_state = max(output, key=lambda x: x[1])
@@ -709,8 +689,16 @@ class OptimizedTreeofThoughts(TreeofThoughts):
                     return result
         elif self.search_algorithm == 'DFS':
             while timeout is None or time.time() - start_time < timeout:
-                result = self.tot_dfs(x, k, T, vth, confidence_threshold=confidence_threshold, max_iterations=max_iterations, convergence_threshold=convergence_threshold, convergence_count=convergence_count)
-                if result:
+                if result := self.tot_dfs(
+                    x,
+                    k,
+                    T,
+                    vth,
+                    confidence_threshold=confidence_threshold,
+                    max_iterations=max_iterations,
+                    convergence_threshold=convergence_threshold,
+                    convergence_count=convergence_count,
+                ):
                     return result
         else:
             raise ValueError("Invalid search algorithm. Choose 'BFS' or 'DFS'.")

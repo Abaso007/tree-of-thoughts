@@ -157,7 +157,7 @@ class TreeofThoughts:
 
     def tot_bfs(self, x, k, T, b):
         S0 = {x}
-        for t in range(1, T + 1):
+        for _ in range(1, T + 1):
             S0_t = {(*s, z) for s in S0 for z in self.model.generate_thoughts(s, k)}
             Vt = self.model.evaluate_states(S0_t)
             St = sorted(S0_t, key=lambda s: Vt[s], reverse=True)[:b]
